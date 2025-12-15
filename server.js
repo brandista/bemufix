@@ -129,25 +129,42 @@ async function lookupVehicle(registrationNumber) {
     try {
       await page.goto(`https://kolariautot.com/${cleanReg}`, {
         waitUntil: 'networkidle',
-        timeout: 30000
+        timeout: 45000
       });
       console.log('✅ Page loaded');
     } catch (e) {
       console.log('⚠️ Navigation timeout, but continuing...', e.message);
     }
     
-    // Wait longer for API calls to complete
-    console.log('⏳ Waiting for API calls (7 seconds)...');
-    await page.waitForTimeout(7000);
+    // Wait for React to mount
+    console.log('⏳ Waiting for React mount (3 seconds)...');
+    await page.waitForTimeout(3000);
     
-    // Try to trigger any lazy-loaded content
+    // Trigger lazy-loaded content with multiple scrolls
+    console.log('🖱️ Simulating user interaction...');
     await page.evaluate(() => {
-      window.scrollTo(0, 100);
+      // Scroll to bottom
+      window.scrollTo(0, document.body.scrollHeight);
+    });
+    await page.waitForTimeout(1000);
+    
+    await page.evaluate(() => {
+      // Scroll to middle
+      window.scrollTo(0, document.body.scrollHeight / 2);
+    });
+    await page.waitForTimeout(1000);
+    
+    await page.evaluate(() => {
+      // Scroll back to top
       window.scrollTo(0, 0);
     });
     
-    console.log('⏳ Final wait (2 seconds)...');
-    await page.waitForTimeout(2000);
+    // Wait longer for API calls to complete
+    console.log('⏳ Waiting for API calls (15 seconds)...');
+    await page.waitForTimeout(15000);
+    
+    console.log('⏳ Final check (3 seconds)...');
+    await page.waitForTimeout(3000);
     
     await browser.close();
     browser = null;
