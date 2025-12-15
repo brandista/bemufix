@@ -124,44 +124,51 @@ async function lookupVehicle(registrationNumber) {
       }
     });
     
-    console.log(`🌐 Navigating to: https://kolariautot.com/${cleanReg}`);
+    console.log(`🌐 Navigating to: https://kolariautot.com`);
     
     try {
-      await page.goto(`https://kolariautot.com/${cleanReg}`, {
+      await page.goto('https://kolariautot.com', {
         waitUntil: 'networkidle',
-        timeout: 45000
+        timeout: 30000
       });
       console.log('✅ Page loaded');
     } catch (e) {
       console.log('⚠️ Navigation timeout, but continuing...', e.message);
     }
     
-    // Wait for React to mount
-    console.log('⏳ Waiting for React mount (3 seconds)...');
-    await page.waitForTimeout(3000);
+    // Wait for the form to be ready
+    console.log('⏳ Waiting for form to load...');
+    await page.waitForTimeout(2000);
     
-    // Trigger lazy-loaded content with multiple scrolls
-    console.log('🖱️ Simulating user interaction...');
-    await page.evaluate(() => {
-      // Scroll to bottom
-      window.scrollTo(0, document.body.scrollHeight);
-    });
-    await page.waitForTimeout(1000);
+    // Find and fill the VIN/registration input field
+    console.log(`📝 Filling registration number: ${formattedReg}`);
+    try {
+      const input = await page.locator('#vin');
+      await input.fill(formattedReg);
+      console.log('✅ Input filled');
+      
+      // Wait a moment for React state update
+      await page.waitForTimeout(500);
+      
+      // Click the search button
+      const searchButton = await page.locator('button[type="button"] svg[data-testid="SearchIcon"]').locator('..');
+      await searchButton.click();
+      console.log('✅ Search button clicked');
+    } catch (e) {
+      console.log('⚠️ Could not fill form:', e.message);
+      // Try Enter as fallback
+      try {
+        const input = await page.locator('#vin');
+        await input.press('Enter');
+        console.log('✅ Fallback: Enter pressed');
+      } catch (e2) {
+        console.log('⚠️ Fallback failed:', e2.message);
+      }
+    }
     
-    await page.evaluate(() => {
-      // Scroll to middle
-      window.scrollTo(0, document.body.scrollHeight / 2);
-    });
-    await page.waitForTimeout(1000);
-    
-    await page.evaluate(() => {
-      // Scroll back to top
-      window.scrollTo(0, 0);
-    });
-    
-    // Wait longer for API calls to complete
-    console.log('⏳ Waiting for API calls (15 seconds)...');
-    await page.waitForTimeout(15000);
+    // Wait for API calls after form submission
+    console.log('⏳ Waiting for API response (10 seconds)...');
+    await page.waitForTimeout(10000);
     
     console.log('⏳ Final check (3 seconds)...');
     await page.waitForTimeout(3000);
